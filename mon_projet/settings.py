@@ -27,8 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'authentication-s5n3.onrender.com',  # Ajoute ton URL ici
-    'localhost',
-    '127.0.0.1'
+   
 ]
 
 
