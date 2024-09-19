@@ -13,61 +13,58 @@ def send_activation_email(user, request):
     try:
         activation_link = f"https://authentication-1-3s3e.onrender.com/activate/{user.pk}/"
 
-        subject = "Activation de votre compte"
-        message = f"Bonjour {user.username}, veuillez cliquer sur ce lien pour activer votre compte : {activation_link}"
-        send_mail(subject, message, 'noreply@monsite.com', [user.email])
+        subject = "Activate Your Account"
+        message = f"Hi {user.username}, please click the following link to activate your account: {activation_link}"
+        send_mail(subject, message, 'noreply@mysite.com', [user.email])
     except BadHeaderError:
-        messages.error(request, "Erreur lors de l'envoi du lien d'activation.")
+        messages.error(request, "There was an error sending the activation link.")
 
-# Vue d'inscription
+# Signup view
 def signup(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             try:
                 user = form.save(commit=False)
-                user.is_active = False  # Le compte nécessite une activation
+                user.is_active = False  # Account needs activation
                 user.save()
 
-                # Envoie un email d'activation
+                # Send activation email
                 send_activation_email(user, request)
 
-                # Message de succès
-                messages.success(request, "Un lien sera envoyé à votre adresse email pour activer votre compte.")
-                
-                # Redirect to a different URL, e.g., 'signup_success'
-                return redirect('signup_success')
+                # Success message
+                messages.success(request, "An activation link has been sent to your email.")
+
+                # Redirect to sign-in page after sending activation link
+                return redirect('signin')
             except Exception as e:
-                logger.error(f"Erreur lors de la création du compte: {e}")
-                messages.error(request, "Une erreur s'est produite. Veuillez réessayer.")
+                logger.error(f"Error creating account: {e}")
+                messages.error(request, "An error occurred. Please try again.")
         else:
             if form.errors.get('email'):
-                messages.error(request, "Cet email existe déjà.")
+                messages.error(request, "This email is already registered.")
             if form.errors.get('password2'):
-                messages.error(request, "Les mots de passe ne correspondent pas.")
+                messages.error(request, "Passwords do not match.")
     else:
         form = CustomUserCreationForm()
 
     return render(request, 'authentication/signup.html', {'form': form})
 
-# Create a success page view to show the message
-def signup_success(request):
-    return render(request, 'authentication/signup_success.html')
-
-# Activation view
+# Account activation view
 def activate_account(request, pk):
     user = get_object_or_404(User, pk=pk)
 
     if not user.is_active:
         user.is_active = True
         user.save()
-        messages.success(request, "Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter.")
-        return redirect('signin')
+        messages.success(request, "Your account has been activated successfully. You can now sign in.")
     else:
-        messages.info(request, "Votre compte est déjà activé.")
-        return redirect('signin')
+        messages.info(request, "Your account is already activated.")
+    
+    # Redirect to the sign-in page after activation
+    return redirect('signin')
 
-# Vue de connexion
+# Sign-in view
 def signin(request):
     if request.method == 'POST':
         username = request.POST['username']
@@ -78,9 +75,9 @@ def signin(request):
             login(request, user)
             return redirect('dashboard')
         else:
-            messages.error(request, "Ces informations n'existent pas.")
+            messages.error(request, "Invalid credentials.")
     return render(request, 'authentication/signin.html')
 
-# Vue du tableau de bord (Dashboard view)
+# Dashboard view
 def dashboard(request):
     return render(request, 'authentication/dashboard.html')
