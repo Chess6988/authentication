@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 # Function to send activation email
 def send_activation_email(user, request):
     try:
-        activation_link = f"http://192.168.128.76:8000/activate/{user.pk}/"
+        activation_link = f"https://authentication-1-3s3e.onrender.com/activate/{user.pk}/"
+
         subject = "Activation de votre compte"
         message = f"Bonjour {user.username}, veuillez cliquer sur ce lien pour activer votre compte : {activation_link}"
         send_mail(subject, message, 'noreply@monsite.com', [user.email])
