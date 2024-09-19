@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure--15g%v@mjv%(*%c$s)^4ln(fpm4*$-yx8y=nc)^(7m_(1hm1ec
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'authentication-s5n3.onrender.com',  # Ajoute ton URL ici
+    'authentication-aodc.onrender.com',  # Ajoute ton URL ici
    
 ]
 
