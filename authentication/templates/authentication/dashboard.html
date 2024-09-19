@@ -1,0 +1,12 @@
+{% extends '../base.html' %}
+{% block title %}Tableau de Bord{% endblock %}
+
+{% block content %}
+  <h2>Bienvenue sur votre tableau de bord!</h2>
+  
+  <!-- Buttons for signup and signin -->
+  <div class="mt-4">
+    <a href="{% url 'signup' %}" class="btn btn-primary">S'inscrire</a>
+    <a href="{% url 'signin' %}" class="btn btn-secondary">Se connecter</a>
+  </div>
+{% endblock %}
