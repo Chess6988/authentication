@@ -1,8 +1,8 @@
 from django.urls import path
-from .views import signup, signin, dashboard, activate_account
+from .views import signup, signin, dashboard, activate_account, home  # Import the home view
 
 urlpatterns = [
-    path('', dashboard, name='dashboard'),
+    path('', home, name='home'),  # Set the home view as the root URL
     path('signup/', signup, name='signup'),
     path('signin/', signin, name='signin'),
     path('dashboard/', dashboard, name='dashboard'),

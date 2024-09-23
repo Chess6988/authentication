@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 def send_activation_email(user, request):
     try:
         activation_link = f"https://authentication-1-3s3e.onrender.com/activate/{user.pk}/"
-
         subject = "Activate Your Account"
         message = f"Hi {user.username}, please click the following link to activate your account: {activation_link}"
         send_mail(subject, message, 'noreply@mysite.com', [user.email])
@@ -62,9 +61,9 @@ def activate_account(request, pk):
         messages.info(request, "Your account is already activated.")
     
     # Redirect to the sign-in page after activation
-    return redirect('signin')
+    return redirect('home')
 
-# Sign-in view
+# Sign-in view with account activation check
 def signin(request):
     if request.method == 'POST':
         username = request.POST['username']
@@ -72,12 +71,22 @@ def signin(request):
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
-            login(request, user)
-            return redirect('dashboard')
+            if not user.is_active:
+                # Account not activated, show bootstrap alert
+                messages.error(request, "You have to activate your account first.")
+                return render(request, 'authentication/signin.html')
+            else:
+                # Log the user in and redirect to the dashboard/home page
+                login(request, user)
+                return redirect('home')
         else:
-            messages.error(request, "Invalid credentials.")
+            messages.error(request, "Invalid credentials. Make sure u have activated your account by clicking on the link in your Gmail account")
     return render(request, 'authentication/signin.html')
 
 # Dashboard view
 def dashboard(request):
     return render(request, 'authentication/dashboard.html')
+
+# Home page view
+def home(request):
+    return render(request, 'authentication/home.html')
