@@ -42,9 +42,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'authentication',
-    'budget',
-    'category',
-    'depense'
+    'camions',
+    'depense',
+    'deduction_mensuel',
+    'profits'
+   
 ]
 
 MIDDLEWARE = [
