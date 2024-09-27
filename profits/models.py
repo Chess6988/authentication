@@ -1,6 +1,7 @@
 from django.db import models
 from depense.models import DailyExpense  # Import DailyExpense from depenses
 from deduction_mensuel.models import MonthlyDeduction  # Import MonthlyDeduction from deductions
+from camions.models import  Truck # Importation du modèle camions
 
 class MonthlyProfit(models.Model):
     date = models.DateField(auto_now_add=True)
