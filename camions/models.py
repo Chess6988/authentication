@@ -22,7 +22,7 @@ class Truck(models.Model):
 class RubberTransport(models.Model):
     truck = models.ForeignKey(Truck, on_delete=models.CASCADE)
     number_of_truck = models.IntegerField(default=1)
-    tons_of_rubber = models.DecimalField(max_digits=10, decimal_places=2)
+    tons_of_rubber = models.FloatField(default=0.0) 
     price_per_ton = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateField(auto_now_add=True)
 

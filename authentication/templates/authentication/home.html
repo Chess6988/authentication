@@ -1,9 +1,296 @@
 {% extends 'base.html' %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Financial Management Dashboard{% endblock %}
 
 {% block content %}
-    <h1>Welcome to the Home Page!</h1>
-    <p>This is the main landing page of your application. Feel free to explore the features available.</p>
-    <a href="{% url 'dashboard' %}" class="btn btn-primary">Go to Dashboard</a>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Main Container */
+    .container {
+        display: flex;
+        height: 100vh;
+    }
+
+    /* Sidebar Menu */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 60px;
+        height: 100vh;
+        background-color: #333;
+        transition: width 0.3s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-y: auto;/* Enable horizontal scrolling for small screens */
+    }
+
+    .sidebar.expanded {
+        width: 250px;
+    }
+
+    /* Menu items */
+    .menu-item {
+        width: 100%;
+        padding: 15px 20px;
+        color: white;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.3s;
+    }
+
+    .menu-item:hover {
+        background-color: #575757;
+    }
+
+    .menu-item i {
+        font-size: 24px;
+        margin-right: 10px;
+    }
+
+    .menu-text {
+        display: none;
+        font-size: 18px;
+    }
+
+    .sidebar.expanded .menu-text {
+        display: inline;
+    }
+
+    /* Content */
+    .content {
+        margin-left: 60px;
+        padding: 20px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Cards Section */
+    .card {
+        background-color: #f8f8f8;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        flex: 1;
+    }
+
+    .card h2 {
+        margin: 0;
+        font-size: 24px;
+        color: #333;
+    }
+
+    .card p {
+        font-size: 18px;
+        color: #666;
+    }
+
+    /* Dashboard Metrics */
+    .dashboard-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .dashboard-metrics .card {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    /* Data Visualization */
+    .charts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .chart {
+        flex: 1;
+        min-width: 300px;
+        height: 200px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 10px;
+    }
+
+    /* Toggle Button */
+    .toggle-btn {
+        position: absolute;
+        top: 15px;
+        left: 10px;
+        cursor: pointer;
+        color: white;
+        background-color: #333;
+        border: none;
+        padding: 10px;
+    }
+
+    /* Responsive - Bottom Menu for Mobile */
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 100%;
+            height: 60px;
+            flex-direction: row;
+            bottom: 0;
+            top: auto;
+            justify-content: space-around;
+            position: fixed;
+            overflow-y: auto;/* Enable horizontal scrolling for small screens */
+        }
+
+        .sidebar.expanded {
+            height: 60px;
+            width: 100%;
+            flex-direction: row;
+            justify-content: space-around;
+        }
+
+       /* Adjust the height of content to avoid overflow on small screens */
+
+    .content {
+        margin-left: 0;
+        margin-bottom: 60px; /* Adjust to avoid overlapping with the bottom navbar */
+        padding: 10px;
+        overflow-y: auto; /* Allow scrolling if the content is too tall */
+        height: calc(100vh - 60px); /* Subtract the height of the bottom navbar */
+    }
+
+
+
+        .dashboard-metrics {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dashboard-metrics .card {
+            min-width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .charts {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chart {
+            min-width: 100%;
+            height: 250px;
+        }
+
+        .card h2 {
+            font-size: 20px;
+        }
+
+        .card p {
+            font-size: 16px;
+        }
+    }
+</style>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <button class="toggle-btn" onclick="toggleMenu()">&#9776;</button><br><br><br><br>
+            <a href="#" class="menu-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span class="menu-text">Dashboard</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-truck"></i>
+                <span class="menu-text">Camions</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-wallet"></i>
+                <span class="menu-text">Depense avec recette </span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-calculator"></i>
+                <span class="menu-text">Deductions</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-chart-line"></i>
+                <span class="menu-text">Reports</span>
+            </a>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <h1>Financial Management Dashboard</h1>
+
+            <!-- Daily Overview -->
+            <div class="dashboard-metrics">
+                <div class="card">
+                    <h2>Today's Revenues</h2>
+                    <p>X FCFA</p>
+                </div>
+                <div class="card">
+                    <h2>Today's Expenses</h2>
+                    <p>Y FCFA</p>
+                </div>
+                <div class="card">
+                    <h2>Today's profit</h2>
+                    <p>Z FCFA</p>
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="dashboard-metrics">
+                <div class="card">
+                    <h2>Total Trucks</h2>
+                    <p>N trucks</p>
+                </div>
+                <div class="card">
+                    <h2> Total rubber transported today</h2>
+                    <p>M tonnes</p>
+                </div>
+                <div class="card">
+                    <h2>Expense Categories</h2>
+                    <p>Fuel: A FCFA, Salaries: B FCFA, etc.</p>
+                </div>
+            </div>
+
+           
+
+            <!-- Quick Actions -->
+            <div class="dashboard-metrics">
+                <div class="card">
+                    <a href="{% url 'register_truck' %}" class="btn btn-primary">Register a New Truck</a>
+                </div>
+               
+            </div>
+
+            <!-- Monthly Overview -->
+            <div class="dashboard-metrics">
+                <div class="card">
+                    <h2>Monthly Deductions</h2>
+                    <p>Salaries, miscellaneous expenses, etc.</p>
+                </div>
+                <div class="card">
+                    <h2>Monthly Profit</h2>
+                    <p>Z FCFA</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            var sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('expanded');
+        }
+    </script>
+
+    <!-- FontAwesome for Icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
 {% endblock %}
