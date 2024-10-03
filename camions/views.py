@@ -3,7 +3,7 @@ from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.urls import reverse
 from .models import RubberTransport, Truck
-from .forms import TruckForm
+from .forms import TruckForm, RubberTransportForm
 
 def register_truck(request):
     if request.method == 'POST':
@@ -18,8 +18,7 @@ def register_truck(request):
     
     return render(request, 'camions/register_truck.html')
 
-
-# Define the missing register_truck_info view
+# Define the view for truck matriculation
 def register_truck_info(request):
     count = int(request.GET.get('count', 1))  # Get the number of trucks from the URL parameter
     if request.method == 'POST':
@@ -32,18 +31,33 @@ def register_truck_info(request):
             else:
                 return render(request, 'camions/truck_information.html', {'form': form, 'count': count})
 
-        # After all trucks are saved, create RubberTransport entries for each truck
-        for truck in trucks:
-            RubberTransport.objects.create(
-                truck=truck,
-                number_of_truck=1,  # You can modify this based on your logic
-                tons_of_rubber=0.0, 
-                price_per_ton=0.0  # You can set a default or get from form
-            )
-        
-        # Redirect after saving truck details and RubberTransport entries
-        return redirect('some_success_page')
-
-    # Create empty forms for each truck
+        # Redirect to the next page to enter the tons and price
+        truck_ids = [truck.id for truck in trucks]
+        return redirect(reverse('enter_truck_data') + f'?truck_ids={",".join(map(str, truck_ids))}')
+    
     forms = [TruckForm() for _ in range(count)]
     return render(request, 'camions/truck_information.html', {'forms': forms, 'count': count})
+
+# New view to enter the tons and price per ton
+def enter_truck_data(request):
+    truck_ids = request.GET.get('truck_ids').split(',')  # Get truck IDs from the URL
+    trucks = Truck.objects.filter(id__in=truck_ids)  # Fetch the trucks by their IDs
+
+    if request.method == 'POST':
+        for truck in trucks:
+            tons = request.POST.get(f'tons_of_rubber_{truck.id}')
+            price = request.POST.get(f'price_per_ton_{truck.id}')
+
+            # Validate and create RubberTransport entry for each truck
+            if tons and price:
+                RubberTransport.objects.create(
+                    truck=truck,
+                    tons_of_rubber=float(tons),
+                    price_per_ton=float(price)
+                )
+        
+        return redirect('some_success_page')  # Redirect after successful form submission
+
+    # Display forms for each truck
+    forms = {truck.id: RubberTransportForm() for truck in trucks}
+    return render(request, 'camions/truck_data_form.html', {'trucks': trucks, 'forms': forms})
