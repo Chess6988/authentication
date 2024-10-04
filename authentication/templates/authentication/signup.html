@@ -1,21 +1,93 @@
 {% extends '../base.html' %}
+{% load form_tags %}
 {% block title %}S'inscrire{% endblock %}
 
 {% block content %}
-  <h2>S'inscrire</h2>
-  
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% endfor %}
-  {% endif %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+  <div class="col-md-6 col-lg-4"> <!-- Make the form responsive with proper column size -->
+    <h2 class="text-center mb-4">S'inscrire</h2>
 
-  <form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">S'inscrire</button>
-  </form>
+    <!-- Alert messages -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Signup form -->
+    <form method="POST" class="needs-validation" novalidate>
+      {% csrf_token %}
+
+      <!-- Username field with icon and placeholder -->
+      <div class="mb-3">
+        <label for="id_username" class="form-label">Nom d'utilisateur</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="bi bi-person-fill"></i>
+          </span>
+          {{ form.username|add_class:"form-control" }}
+        </div>
+      </div>
+
+      <!-- Email field with icon and placeholder -->
+      <div class="mb-3">
+        <label for="id_email" class="form-label">Email</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="bi bi-envelope-fill"></i>
+          </span>
+          {{ form.email|add_class:"form-control" }}
+        </div>
+      </div>
+
+      <!-- Password field with icon and placeholder -->
+      <div class="mb-3">
+        <label for="id_password1" class="form-label">Mot de passe</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="bi bi-lock-fill"></i>
+          </span>
+          {{ form.password1|add_class:"form-control" }}
+        </div>
+      </div>
+
+      <!-- Password confirmation field -->
+      <div class="mb-3">
+        <label for="id_password2" class="form-label">Confirmer le mot de passe</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="bi bi-lock-fill"></i>
+          </span>
+          {{ form.password2|add_class:"form-control" }}
+        </div>
+      </div>
+
+      <!-- Terms of Service agreement -->
+      <div class="form-check mb-4">
+        <input class="form-check-input" type="checkbox" value="" id="agreeToTerms" required>
+        <label class="form-check-label" for="agreeToTerms" required>
+          J'accepte les <a href="#">termes et conditions</a>
+        </label>
+      </div>
+
+       <!-- Submit button with icon -->
+      <div class="d-grid mb-3">
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="bi bi-pencil-square"></i> S'inscrire
+        </button>
+      </div>
+
+      <!-- Red "Se connecter" button with icon -->
+      <div class="d-grid">
+        <a href="{% url 'signin' %}" class="btn btn-danger btn-block">
+          <i class="bi bi-box-arrow-in-right"></i> Se connecter
+        </a>
+      </div>
+      
+    </form>
+  </div>
+</div>
 {% endblock %}
