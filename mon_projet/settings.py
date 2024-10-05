@@ -73,6 +73,9 @@ EMAIL_HOST_PASSWORD = 'oxvk gupz tncs nxrc'  # Your app-specific password (see n
 DEFAULT_FROM_EMAIL = 'noreply.kuetevaldes@gmail.com'  # Default from email address
 
 
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True  # Ensure you're using HTTPS in production
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
