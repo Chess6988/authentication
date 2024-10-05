@@ -50,9 +50,16 @@ def signup(request):
     return render(request, 'authentication/signup.html', {'form': form})
 
 # Account activation view
-def activate_account(request, pk):
-    user = get_object_or_404(User, pk=pk)
 
+# Account activation view
+def activate_account(request, pk):
+    try:
+        user = User.objects.get(pk=pk)  # Attempt to get the user by primary key
+    except User.DoesNotExist:
+        # Handle the case where the user is not found
+        messages.error(request, "The account you're trying to activate does not exist.")
+        return redirect('home')  # Redirect to home or a custom error page
+    
     if not user.is_active:
         user.is_active = True
         user.save()
@@ -61,8 +68,10 @@ def activate_account(request, pk):
         messages.info(request, "Your account is already activated.")
     
     # Redirect to the sign-in page after activation
-    return redirect('home')
+    return redirect('signin')
 
+
+    
 # Sign-in view with account activation check
 def signin(request):
     if request.method == 'POST':
