@@ -2,11 +2,85 @@
 {% block title %}Tableau de Bord{% endblock %}
 
 {% block content %}
-  <h2>Bienvenue sur votre tableau de bord!</h2>
-  
-  <!-- Buttons for signup and signin -->
-  <div class="mt-4">
-    <a href="{% url 'signup' %}" class="btn btn-primary">S'inscrire</a>
-    <a href="{% url 'signin' %}" class="btn btn-secondary">Se connecter</a>
+  <!-- Center everything using Flexbox -->
+  <div class="dashboard-container d-flex justify-content-center align-items-center flex-column">
+    <h2 class="dashboard-title text-center">Bienvenue sur votre tableau de bord!</h2>
+
+    <!-- Buttons for signup and signin -->
+    <div class="button-group mt-4">
+      <a href="{% url 'signup' %}" class="btn btn-primary btn-lg mx-2">S'inscrire</a>
+      <a href="{% url 'signin' %}" class="btn btn-outline-secondary btn-lg mx-2">Se connecter</a>
+    </div>
+
+    <!-- Animation Container -->
+    <div class="animation-container d-flex justify-content-center">
+      <div class="icon-animation coin"></div>
+      <div class="icon-animation dollar-bill"></div>
+      <div class="icon-animation graph"></div>
+    </div>
   </div>
+
+  <style>
+    /* Dashboard container */
+    .dashboard-container {
+      min-height: 100vh; /* Full-height viewport */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    /* Button Group */
+    .button-group a {
+      margin: 0 10px; /* Add some margin between buttons */
+    }
+
+    /* Icon animation */
+    .animation-container {
+      position: relative;
+      width: 100%;
+      height: 150px;
+      margin-top: 20px;
+    }
+
+    .icon-animation {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      opacity: 0.9;
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+
+    .coin {
+      background-image: url('https://cdn-icons-png.flaticon.com/512/1785/1785997.png');
+      animation: float 6s ease-in-out infinite;
+      left: calc(33% - 20px); /* Adjust to center */
+    }
+
+    .dollar-bill {
+      background-image: url('https://cdn-icons-png.flaticon.com/512/1785/1785963.png');
+      animation: float 7s ease-in-out infinite;
+      left: calc(50% - 20px); /* Adjust to center */
+    }
+
+    .graph {
+      background-image: url('https://cdn-icons-png.flaticon.com/512/1665/1665734.png');
+      animation: float 5s ease-in-out infinite;
+      left: calc(67% - 20px); /* Adjust to center */
+    }
+
+    /* Floating animation */
+    @keyframes float {
+      0% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-20px);
+      }
+      100% {
+        transform: translateY(0);
+      }
+    }
+  </style>
 {% endblock %}
