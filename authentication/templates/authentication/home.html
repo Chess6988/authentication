@@ -223,10 +223,14 @@
                 <span class="menu-text">Reports</span>
             </a>
 
-            <a href="{% url 'logout' %}" class="menu-item">
-                <i class="fas fa-sign-out-alt"></i>
-                <span class="menu-text">Logout</span>
-            </a>
+            <form id="logout-form" action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="menu-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="menu-text">Logout</span>
+                </button>
+            </form>
+            
         </div>
 
         <!-- Content -->
@@ -275,10 +279,6 @@
                
             </div>
 
-                <div class="card">
-                    <h2>Monthly Profit</h2>
-                    <p>Z FCFA</p>
-                </div>
             </div>
         </div>
     </div>

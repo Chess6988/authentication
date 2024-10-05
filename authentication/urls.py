@@ -10,5 +10,5 @@ urlpatterns = [
     path('activate/<int:pk>/', activate_account, name='activate_account'),
     
     # Add the logout URL
-    path('logout/', LogoutView.as_view(next_page='home'), name='logout'),
+    path('logout/', LogoutView.as_view(next_page='signin'), name='logout'),
 ]
