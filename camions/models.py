@@ -1,5 +1,5 @@
-from django.core.exceptions import ValidationError
 import re
+from django.core.exceptions import ValidationError
 from django.db import models
 
 class Truck(models.Model):
@@ -9,7 +9,7 @@ class Truck(models.Model):
     def clean(self):
         # Define the expected format: 2 letters, space, 4 digits, space, 1 letter
         if not re.match(r'^[A-Z]{2} \d{4} [A-Z]$', self.matriculation_number):
-            raise ValidationError('Matriculation number must follow the format "LT 1234 M"')
+            raise ValidationError('Matriculation number must follow the format "GA-456-TY"')
 
     def save(self, *args, **kwargs):
         self.full_clean()  # This will call clean() before saving to validate the format

@@ -28,7 +28,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        overflow-y: auto;/* Enable horizontal scrolling for small screens */
+        overflow-y: auto;
     }
 
     .sidebar.expanded {
@@ -156,17 +156,13 @@
             justify-content: space-around;
         }
 
-       /* Adjust the height of content to avoid overflow on small screens */
-
-    .content {
-        margin-left: 0;
-        margin-bottom: 60px; /* Adjust to avoid overlapping with the bottom navbar */
-        padding: 10px;
-        overflow-y: auto; /* Allow scrolling if the content is too tall */
-        height: calc(100vh - 60px); /* Subtract the height of the bottom navbar */
-    }
-
-
+        .content {
+            margin-left: 0;
+            margin-bottom: 60px; /* Adjust to avoid overlapping with the bottom navbar */
+            padding: 10px;
+            overflow-y: auto; /* Allow scrolling if the content is too tall */
+            height: calc(100vh - 60px); /* Subtract the height of the bottom navbar */
+        }
 
         .dashboard-metrics {
             flex-direction: column;
@@ -195,101 +191,95 @@
         .card p {
             font-size: 16px;
         }
+ 
     }
 </style>
 
-    <div class="container">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <button class="toggle-btn" onclick="toggleMenu()">&#9776;</button><br><br><br><br>
-            <a href="#" class="menu-item">
-                <i class="fas fa-tachometer-alt"></i>
-                <span class="menu-text">Dashboard</span>
-            </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-truck"></i>
-                <span class="menu-text">Camions</span>
-            </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-wallet"></i>
-                <span class="menu-text">Depense avec recette </span>
-            </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-calculator"></i>
-                <span class="menu-text">Deductions</span>
-            </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-chart-line"></i>
-                <span class="menu-text">Reports</span>
-            </a>
+<div class="container">
+    <div class="sidebar" id="sidebar">
+        <button class="toggle-btn" onclick="toggleMenu()">&#9776;</button><br><br><br><br>
+        <a href="#" class="menu-item">
+            <i class="bi bi-speedometer2"></i>
+            <span class="menu-text" style="color: rgb(13, 247, 13);">Dashboard</span>
 
-            <form id="logout-form" action="{% url 'logout' %}" method="post">
-                {% csrf_token %}
-                <button type="submit" class="menu-item">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span class="menu-text">Logout</span>
-                </button>
-            </form>
-            
+        </a>
+        <a href="#" class="menu-item">
+            <i class="bi bi-truck"></i>
+            <span class="menu-text">Camions</span>
+        </a>
+        <a href="#" class="menu-item">
+            <i class="bi bi-wallet2"></i>
+            <span class="menu-text">Depense</span>
+        </a>
+        <a href="#" class="menu-item">
+            <i class="bi bi-calculator"></i>
+            <span class="menu-text">Deductions</span>
+        </a>
+        <a href="#" class="menu-item">
+            <i class="bi bi-graph-up"></i>
+            <span class="menu-text">Reports</span>
+        </a>
+    
+        <form id="logout-form" action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="menu-item">
+                <i class="bi bi-box-arrow-right"></i>
+                <span class="menu-text">Logout</span>
+            </button>
+        </form>
+    </div>
+    
+
+    <!-- Content -->
+    <div class="content">
+        <h1 style="text-align: center;">Financial Management Dashboard</h1>
+
+        <!-- Daily Overview -->
+        <div class="dashboard-metrics">
+            <div class="card">
+                <h2>Today's Revenues</h2>
+                <p>X FCFA</p>
+            </div>
+            <div class="card">
+                <h2>Today's Expenses</h2>
+                <p>Y FCFA</p>
+            </div>
+            <div class="card">
+                <h2>Today's profit</h2>
+                <p>Z FCFA</p>
+            </div>
         </div>
 
-        <!-- Content -->
-        <div class="content">
-            <h1 style="text-align: center;">Financial Management Dashboard</h1>
-
-            <!-- Daily Overview -->
-            <div class="dashboard-metrics">
-                <div class="card">
-                    <h2>Today's Revenues</h2>
-                    <p>X FCFA</p>
-                </div>
-                <div class="card">
-                    <h2>Today's Expenses</h2>
-                    <p>Y FCFA</p>
-                </div>
-                <div class="card">
-                    <h2>Today's profit</h2>
-                    <p>Z FCFA</p>
-                </div>
+        <!-- Key Metrics -->
+        <div class="dashboard-metrics">
+            <div class="card">
+                <h2>Total Trucks</h2>
+                <p>N trucks</p>
             </div>
-
-            <!-- Key Metrics -->
-            <div class="dashboard-metrics">
-                <div class="card">
-                    <h2>Total Trucks</h2>
-                    <p>N trucks</p>
-                </div>
-                <div class="card">
-                    <h2> Total rubber transported today</h2>
-                    <p>M tonnes</p>
-                </div>
-                <div class="card">
-                    <h2>Expense Categories</h2>
-                    <p>Fuel: A FCFA, Salaries: B FCFA, etc.</p>
-                </div>
+            <div class="card">
+                <h2>Total rubber transported today</h2>
+                <p>M tonnes</p>
             </div>
-
-           
-
-            <!-- Quick Actions -->
-            <div class="dashboard-metrics">
-                <div class="card">
-                    <a href="{% url 'register_truck' %}" class="btn btn-primary">Register a New Truck</a>
-                </div>
-               
+            <div class="card">
+                <h2>Expense Categories</h2>
+                <p>Fuel: A FCFA, Salaries: B FCFA, etc.</p>
             </div>
+        </div>
 
+        <!-- Quick Actions -->
+        <div class="dashboard-metrics">
+            <div class="card">
+                <a href="{% url 'register_truck' %}" class="btn btn-primary">Register a New Truck</a>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        function toggleMenu() {
-            var sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('expanded');
-        }
-    </script>
+<script>
+    function toggleMenu() {
+        var sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('expanded');
+    }
+</script>
 
-    <!-- FontAwesome for Icons -->
-    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
 {% endblock %}
