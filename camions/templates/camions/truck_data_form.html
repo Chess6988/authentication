@@ -1,38 +1,19 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container">
-    <h2 class="text-center">Enter Truck Data</h2>
 
-    <form method="POST">
-        {% csrf_token %}
-        {% for truck in trucks %}
-            <div class="form-group">
-                <h5>Truck {{ truck.matriculation_number }}</h5>
 
-                <label for="tons_of_rubber_{{ truck.id }}">Number of Tons</label>
-                <input type="number" class="form-control" id="tons_of_rubber_{{ truck.id }}" name="tons_of_rubber_{{ truck.id }}" step="0.01" required>
-
-                <label for="price_per_ton_{{ truck.id }}">Price per Ton</label>
-                <input type="number" class="form-control" id="price_per_ton_{{ truck.id }}" name="price_per_ton_{{ truck.id }}" step="0.01" required>
-
-                <button type="button" class="btn btn-secondary mt-2" onclick="generateRecette('{{ truck.id }}')">Generate Recette</button>
-                <input type="text" class="form-control mt-2" id="recette_{{ truck.id }}" placeholder="Recette" readonly>
-            </div>
+{% if valid_trucks %}
+    <h2>List of Registered Trucks</h2>
+    <ul>
+        {% for truck in valid_trucks %}
+            <li>{{ truck }}</li>
         {% endfor %}
-        <button type="submit" class="btn btn-primary mt-4">Submit</button>
-    </form>
-</div>
+    </ul>
+{% else %}
+    <p>No trucks have been registered yet.</p>
+{% endif %}
 
-<script>
-function generateRecette(truckId) {
-    let tons = parseFloat(document.getElementById('tons_of_rubber_' + truckId).value);
-    let price = parseFloat(document.getElementById('price_per_ton_' + truckId).value);
-    if (!isNaN(tons) && !isNaN(price)) {
-        let recette = tons * price;
-        document.getElementById('recette_' + truckId).value = recette.toFixed(2);
-    } else {
-        alert('Please enter valid numbers for both tons and price per ton.');
-    }
-}
-</script>
+
+
+
 {% endblock %}
