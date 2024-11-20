@@ -76,6 +76,10 @@ DEFAULT_FROM_EMAIL = 'noreply.kuetevaldes@gmail.com'  # Default from email addre
 CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True  # Ensure you're using HTTPS in production
 
+# Make sure session data persists
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

@@ -44,50 +44,39 @@ def register_truck(request):
     return render(request, 'camions/register_truck.html')
 
 
+
 # Define the view for truck matriculation
-def truck_information_view(request):
-    # Récupérer le nombre de camions depuis la session
-    number_of_trucks = request.session.get('number_of_trucks', 1)  # Par défaut, 1 camion
+def truck_information(request):
+    # Retrieve the number of trucks from the session
+    number_of_trucks = request.session.get('number_of_trucks', 0)
+
+    if not number_of_trucks:
+        # Redirect back to register_truck if no number is found in the session
+        messages.error(request, "Please enter the number of trucks first.")
+        return redirect('register_truck')
+
+    # Create a formset for TruckForm with the number of trucks specified
     TruckFormSet = formset_factory(TruckForm, extra=number_of_trucks)
 
     if request.method == 'POST':
         formset = TruckFormSet(request.POST)
+
         if formset.is_valid():
-            valid_trucks = []  # Stocker les matriculations valides
-            invalid = False  # Indicateur pour savoir si une matriculation est invalide
-
+            # Save each valid form's data
             for form in formset:
-                matriculation_number = form.cleaned_data.get('matriculation_number')
-                if matriculation_number:
-                    try:
-                        # Valider et enregistrer le camion
-                        truck = Truck(matriculation_number=matriculation_number)
-                        truck.full_clean()  # Valider les données
-                        truck.save()  # Sauvegarder dans la base de données
-                        valid_trucks.append(truck.matriculation_number)  # Ajouter aux matriculations valides
-                    except ValidationError:
-                        invalid = True
-                        messages.error(request, f"Le numéro de matriculation {matriculation_number} est invalide ou déjà utilisé.")
-                        break
+                if form.cleaned_data:
+                    truck = form.save()
 
-            if invalid:
-                return render(request, 'camions/truck_information.html', {'forms': formset})
+                    # Optionally, create RubberTransport entries for these trucks
+                    RubberTransport.objects.create(truck=truck, number_of_truck=1)
 
-            # Sauvegarder les camions valides dans la session et rediriger
-            request.session['valid_trucks'] = valid_trucks
-            return redirect('truck_data_form')  # Rediriger vers la page qui affiche les matriculations
-
+            # Clear the session data and show a success message
+            del request.session['number_of_trucks']
+            messages.success(request, "All trucks have been successfully registered.")
+            return redirect('register_truck')  # Redirect to the registration page or a success page
         else:
-            # Afficher un message d'erreur si les formulaires ne sont pas valides
-            messages.error(request, "Veuillez remplir correctement tous les formulaires.")
+            messages.error(request, "Please fix the errors in the forms.")
     else:
-        formset = TruckFormSet()  # Générer un formset vierge
+        formset = TruckFormSet()  # Generate empty forms for GET request
 
     return render(request, 'camions/truck_information.html', {'forms': formset})
-
-def truck_data_form_view(request):
-    # Get the list of valid matriculations stored in the session
-    valid_trucks = request.session.get('valid_trucks', [])
-
-    # Pass the list of trucks to the template
-    return render(request, 'camions/truck_data_form.html', {'valid_trucks': valid_trucks})
