@@ -74,9 +74,12 @@ def truck_information(request):
                     try:
                         # Save the truck
                         truck = form.save(commit=False)
-                        truck.save()
-                        recently_registered_trucks.append(truck.matriculation_number)
-                        print(f"Saved truck: {truck.matriculation_number}")
+                        truck.save()  # created_at is automatically added here
+                        recently_registered_trucks.append({
+                            "matriculation_number": truck.matriculation_number,
+                            "created_at": truck.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Save as string for session
+                        })
+                        print(f"Saved truck: {truck.matriculation_number}, created_at: {truck.created_at}")
                     except IntegrityError:
                         # Handle duplicate entry
                         form.add_error('matriculation_number', f"The matriculation number '{matriculation_number}' already exists.")
@@ -101,14 +104,23 @@ def truck_information(request):
     return render(request, 'camions/truck_information.html', {'forms': formset})
 
 
-
 def list_registered_trucks(request):
     # Retrieve trucks registered in the current session
     recently_registered = request.session.get('recently_registered_trucks', [])
     print(f"Recently registered trucks: {recently_registered}")
 
-    # Filter the trucks in the database by the recently registered matriculation numbers
-    trucks = Truck.objects.filter(matriculation_number__in=recently_registered)
+    # Fetch trucks from the database that match the matriculation numbers
+    matriculation_numbers = [truck['matriculation_number'] for truck in recently_registered]
+    trucks = Truck.objects.filter(matriculation_number__in=matriculation_numbers)
 
-    # Render the registered_trucks.html template with the filtered trucks
-    return render(request, 'camions/registered_trucks.html', {'registered_trucks': trucks})
+    # Pass trucks with created_at information to the template
+    trucks_with_dates = [
+        {
+            "matriculation_number": truck.matriculation_number,
+            "created_at": truck.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        for truck in trucks
+    ]
+
+    return render(request, 'camions/registered_trucks.html', {'registered_trucks': trucks_with_dates})
+

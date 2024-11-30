@@ -12,11 +12,14 @@
         <ul class="list-group">
             {% for truck in registered_trucks %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    {{ truck.matriculation_number }}
+                    <div>
+                        <strong>Matriculation:</strong> {{ truck.matriculation_number }}<br>
+                        <strong>Registered At:</strong> {{ truck.created_at }}
+                    </div>
                     <a href="#" class="btn btn-sm btn-info">Les frais du camion</a>
                 </li>
             {% empty %}
-                <li class="list-group-item text-center">No trucks have been registered yet.</li>
+                <li class="list-group-item text-center">No trucks have been registered yet for today.</li>
             {% endfor %}
         </ul>
  
