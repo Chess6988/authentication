@@ -46,37 +46,69 @@ def register_truck(request):
 
 
 # Define the view for truck matriculation
+
 def truck_information(request):
-    # Retrieve the number of trucks from the session
+    # Get the number of trucks from the session
     number_of_trucks = request.session.get('number_of_trucks', 0)
+    print(f"Number of trucks in session: {number_of_trucks}")
 
     if not number_of_trucks:
-        # Redirect back to register_truck if no number is found in the session
         messages.error(request, "Please enter the number of trucks first.")
         return redirect('register_truck')
 
-    # Create a formset for TruckForm with the number of trucks specified
+    # Create a formset with the specified number of trucks
     TruckFormSet = formset_factory(TruckForm, extra=number_of_trucks)
 
     if request.method == 'POST':
         formset = TruckFormSet(request.POST)
+        print("Received POST data:", request.POST)  # Debug POST data
 
         if formset.is_valid():
-            # Save each valid form's data
+            print("Formset is valid.")
+            recently_registered_trucks = []  # Store matriculation numbers of newly added trucks
+            duplicate_errors = False  # Track if there are any duplicates
+
             for form in formset:
                 if form.cleaned_data:
-                    truck = form.save()
+                    matriculation_number = form.cleaned_data['matriculation_number']
+                    try:
+                        # Save the truck
+                        truck = form.save(commit=False)
+                        truck.save()
+                        recently_registered_trucks.append(truck.matriculation_number)
+                        print(f"Saved truck: {truck.matriculation_number}")
+                    except IntegrityError:
+                        # Handle duplicate entry
+                        form.add_error('matriculation_number', f"The matriculation number '{matriculation_number}' already exists.")
+                        duplicate_errors = True
 
-                    # Optionally, create RubberTransport entries for these trucks
-                    RubberTransport.objects.create(truck=truck, number_of_truck=1)
+            if duplicate_errors:
+                messages.error(request, "Some matriculation numbers already exist. Please correct them.")
+                return render(request, 'camions/truck_information.html', {'forms': formset})
 
-            # Clear the session data and show a success message
-            del request.session['number_of_trucks']
-            messages.success(request, "All trucks have been successfully registered.")
-            return redirect('register_truck')  # Redirect to the registration page or a success page
+            # Save the recently registered trucks in the session for display
+            request.session['recently_registered_trucks'] = recently_registered_trucks
+            messages.success(request, "Trucks successfully registered.")
+            return redirect('list_registered_trucks')
         else:
+            print("Formset is invalid.")
+            print("Formset errors:", formset.errors)  # Debug formset errors
             messages.error(request, "Please fix the errors in the forms.")
     else:
-        formset = TruckFormSet()  # Generate empty forms for GET request
+        formset = TruckFormSet()
+        print("Rendering truck information page...")
 
     return render(request, 'camions/truck_information.html', {'forms': formset})
+
+
+
+def list_registered_trucks(request):
+    # Retrieve trucks registered in the current session
+    recently_registered = request.session.get('recently_registered_trucks', [])
+    print(f"Recently registered trucks: {recently_registered}")
+
+    # Filter the trucks in the database by the recently registered matriculation numbers
+    trucks = Truck.objects.filter(matriculation_number__in=recently_registered)
+
+    # Render the registered_trucks.html template with the filtered trucks
+    return render(request, 'camions/registered_trucks.html', {'registered_trucks': trucks})

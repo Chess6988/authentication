@@ -7,13 +7,11 @@ class TruckForm(forms.ModelForm):
         model = Truck
         fields = ['matriculation_number']
         widgets = {
-            'matriculation_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter matriculation number'}),
+            'matriculation_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter matriculation number',
+            }),
         }
-    def clean_matriculation_number(self):
-        matriculation_number = self.cleaned_data.get('matriculation_number')
-        if not re.match(r'^[A-Z]{2}-\d{3}-[A-Z]{2}$', matriculation_number):
-            raise forms.ValidationError('Matriculation number must follow the format "GA-456-TY".')
-        return matriculation_number
 
 class RubberTransportForm(forms.ModelForm):
     class Meta:

@@ -8,13 +8,16 @@
         <!-- Bootstrap Alert Message -->
        
 
-        <!-- Truck Matriculation Form -->
         <form method="POST">
             {% csrf_token %}
+            {{ forms.management_form }} <!-- Include the management form -->
             {% for form in forms %}
-                <div class="form-group mb-3"> <!-- Added margin-bottom class -->
-                    <label for="matriculation_number">Truck {{ forloop.counter }} Matriculation Number</label>
-                    {{ form.matriculation_number }}
+                <div class="form-group mb-3">
+                    <label>Truck {{ forloop.counter }} Matriculation Number</label>
+                    {{ form.matriculation_number }} <!-- Input field -->
+                    {% for error in form.matriculation_number.errors %}
+                        <small class="text-danger">{{ error }}</small> <!-- Display field-specific errors -->
+                    {% endfor %}
                 </div>
             {% endfor %}
             <button type="submit" class="btn btn-primary w-100">Submit Trucks</button>

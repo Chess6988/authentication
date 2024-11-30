@@ -6,15 +6,6 @@ class Truck(models.Model):
     matriculation_number = models.CharField(max_length=15, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def clean(self):
-        # Define the expected format: 2 letters, space, 4 digits, space, 1 letter
-        if not re.match(r'^[A-Z]{2} \d{4} [A-Z]$', self.matriculation_number):
-            raise ValidationError('Matriculation number must follow the format "GA-456-TY"')
-
-    def save(self, *args, **kwargs):
-        self.full_clean()  # This will call clean() before saving to validate the format
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return self.matriculation_number
 
