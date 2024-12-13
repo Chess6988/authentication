@@ -10,6 +10,8 @@ from django.forms import formset_factory
 
 # Added recently
 from django.utils.timezone import now
+from collections import defaultdict
+from datetime import datetime
 from django.db.models import Q
 
 from django.views.decorators.csrf import csrf_protect  # Import csrf_protect
@@ -125,6 +127,10 @@ def truck_information(request):
 
 
 def list_registered_trucks(request):
+    # Date range filter from the request
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
     # Retrieve trucks registered in the current session
     recently_registered = request.session.get('recently_registered_trucks', [])
     print(f"Recently registered trucks: {recently_registered}")
@@ -133,13 +139,33 @@ def list_registered_trucks(request):
     matriculation_numbers = [truck['matriculation_number'] for truck in recently_registered]
     trucks = Truck.objects.filter(matriculation_number__in=matriculation_numbers)
 
-    # Pass trucks with created_at information to the template
-    trucks_with_dates = [
-        {
+    # Apply date range filter if provided
+    if start_date and end_date:
+        trucks = trucks.filter(
+            created_at__date__gte=start_date,
+            created_at__date__lte=end_date
+        )
+
+    # Group trucks by their creation date
+    grouped_trucks = defaultdict(list)
+    for truck in trucks:
+        # Format date to 'YYYY-MM-DD'
+        created_date = truck.created_at.strftime('%Y-%m-%d')
+        grouped_trucks[created_date].append({
             "matriculation_number": truck.matriculation_number,
             "created_at": truck.created_at.strftime('%Y-%m-%d %H:%M:%S')
-        }
-        for truck in trucks
-    ]
+        })
 
-    return render(request, 'camions/registered_trucks.html', {'registered_trucks': trucks_with_dates})
+    # Convert defaultdict to a regular dictionary for rendering
+    grouped_trucks = dict(grouped_trucks)
+
+    return render(
+        request,
+        'camions/registered_trucks.html',
+        {
+            'grouped_trucks': grouped_trucks,
+            'start_date': start_date,
+            'end_date': end_date,
+        }
+    )
+

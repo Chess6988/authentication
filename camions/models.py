@@ -17,9 +17,6 @@ class RubberTransport(models.Model):
     price_per_ton = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateField(auto_now_add=True)
 
-    @property
-    def total_revenue(self):
-        return self.tons_of_rubber * self.price_per_ton
-
+    
     def __str__(self):
-        return f"{self.truck} - {self.total_revenue} on {self.date}"
+        return f'Truck: {self.truck}, Tons of Rubber: {self.tons_of_rubber}, Date: {self.date}'
