@@ -4,12 +4,12 @@ from camions.models import Truck  # Import the Truck model
 class DailyExpense(models.Model):
     truck = models.ForeignKey(Truck, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
-    driver_road_costs = models.DecimalField(max_digits=10, decimal_places=2)
-    fuel_and_misc = models.DecimalField(max_digits=10, decimal_places=2)
-    other_expenses = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    oil_change = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    maintenance = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    driver_salary = models.DecimalField(max_digits=10, decimal_places=2)
+    driver_road_costs = models.DecimalField(max_digits=10, decimal_places=2)# Frais de route
+    fuel_and_misc = models.DecimalField(max_digits=10, decimal_places=2) # Carburant
+    other_expenses = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) 
+    oil_change = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) # Vidange
+    maintenance = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)# Maintainance
+    driver_salary = models.DecimalField(max_digits=10, decimal_places=2) # Salaire Chauffeur
 
     @property
     def total_expense(self):
