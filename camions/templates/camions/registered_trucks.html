@@ -39,31 +39,163 @@
             </div>
         </form>
     
-        <!-- Grouped Trucks -->
-        {% if grouped_trucks %}
-            {% for date, trucks in grouped_trucks.items %}
+<!-- Grouped Trucks -->
+{% if grouped_trucks %}
+    {% for date, trucks in grouped_trucks.items %}
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                Registered on {{ date }}
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for truck in trucks %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Matriculation:</strong> {{ truck.matriculation_number }}<br>
+                            <strong>Registered At:</strong> {{ truck.created_at }}
+                        </div>
+                        <div>
+                            <span data-truck-id="{{ truck.id }}"><strong>Recette:</strong> {{ truck.recette|floatformat:2 }} FCFA</span>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#addRubberTransportModal"
+                                    data-truck-id="{{ truck.id }}" 
+                                    data-matriculation="{{ truck.matriculation_number }}"
+                                    data-registered-at="{{ truck.created_at }}">
+                                Add Rubber Transport
+                            </button>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info text-center">
+        No trucks have been registered yet for the selected date range.
+    </div>
+{% endif %}
+
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="addRubberTransportModal" tabindex="-1" aria-labelledby="addRubberTransportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addRubberTransportModalLabel">Add Rubber Transport</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Truck Information -->
                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
-                        Registered on {{ date }}
+                        Truck Details
                     </div>
-                    <ul class="list-group list-group-flush">
-                        {% for truck in trucks %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>Matriculation:</strong> {{ truck.matriculation_number }}<br>
-                                    <strong>Registered At:</strong> {{ truck.created_at }}
-                                </div>
-                                <a href="#" class="btn btn-sm btn-info">Les frais du camion</a>
-                            </li>
-                        {% endfor %}
-                    </ul>
+                    <div class="card-body">
+                        <p><strong>Matriculation Number:</strong> <span id="truckMatriculation"></span></p>
+                        <p><strong>Registered At:</strong> <span id="truckRegisteredAt"></span></p>
+                    </div>
                 </div>
-            {% endfor %}
-        {% else %}
-            <div class="alert alert-info text-center">
-                No trucks have been registered yet for the selected date range.
+
+                <!-- Add Rubber Transport Form -->
+                <form method="POST" action="" id="addRubberTransportForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="truckId" name="truck_id">
+                    <div class="mb-3">
+                        <label for="tons_of_rubber" class="form-label">Tons of Rubber</label>
+                        <input type="number" id="tons_of_rubber" name="tons_of_rubber" class="form-control" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="price_per_ton" class="form-label">Price Per Ton</label>
+                        <input type="number" id="price_per_ton" name="price_per_ton" class="form-control" step="0.01" required>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
             </div>
-        {% endif %}
+        </div>
     </div>
+</div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Ensure the modal is populated with the correct truck data
+  const addRubberTransportModal = document.getElementById('addRubberTransportModal');
+
+// Populate the modal dynamically
+addRubberTransportModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+
+    // Extract truck details from data attributes
+    const truckId = button.getAttribute('data-truck-id');
+    const matriculation = button.getAttribute('data-matriculation');
+    const registeredAt = button.getAttribute('data-registered-at');
+
+    // Populate modal fields
+    addRubberTransportModal.querySelector('#truckId').value = truckId;
+    addRubberTransportModal.querySelector('#truckMatriculation').textContent = matriculation;
+    addRubberTransportModal.querySelector('#truckRegisteredAt').textContent = registeredAt;
+
+    // Validate truckId
+    if (!truckId) {
+        console.error('Error: Truck ID is missing!');
+        alert('Unable to open the modal. Truck ID is missing.');
+        return;
+    }
+
+    // Set the form action dynamically
+    const form = addRubberTransportModal.querySelector('#addRubberTransportForm');
+    form.action = `/add_rubber_transport/${truckId}/`; // Use the truckId directly in the URL
+});
+
+// Handle the form submission using AJAX
+document.getElementById('addRubberTransportForm').addEventListener('submit', function (event) {
+    event.preventDefault(); // Prevent default form submission
+
+    const form = event.target;
+    const formData = new FormData(form);
+
+    // Send AJAX request to the backend
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken') // Include CSRF token
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Successfully saved, update the recette in the UI
+            const truckId = formData.get('truck_id');
+            const recetteElement = document.querySelector(`[data-truck-id="${truckId}"]`).parentElement.querySelector('span');
+            recetteElement.innerHTML = `<strong>Recette:</strong> ${data.recette.toFixed(2)} FCFA`;
+
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addRubberTransportModal'));
+            modal.hide();
+
+            // Optional: Show a success notification
+            alert('Rubber transport details added successfully!');
+        } else {
+            // Handle errors returned by the server
+            alert(`Error: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An unexpected error occurred. Please try again.');
+    });
+});
+   </script>
+
+    
 </body>
 </html>

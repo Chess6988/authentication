@@ -1,12 +1,13 @@
 import re
-from django.shortcuts import render, redirect
-from django.http import HttpResponseRedirect
+from django.shortcuts import render, redirect,  get_object_or_404
+from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib import messages
 from django.urls import reverse
 from .models import RubberTransport, Truck
 from .forms import TruckForm, RubberTransportForm
 from django.core.exceptions import ValidationError
 from django.forms import formset_factory 
+from django.db.models import Sum ,F, FloatField
 
 # Added recently
 from django.utils.timezone import now
@@ -126,6 +127,7 @@ def truck_information(request):
 
 
 
+
 def list_registered_trucks(request):
     # Date range filter from the request
     start_date = request.GET.get('start_date')
@@ -149,11 +151,17 @@ def list_registered_trucks(request):
     # Group trucks by their creation date
     grouped_trucks = defaultdict(list)
     for truck in trucks:
-        # Format date to 'YYYY-MM-DD'
+        # Calculate the total recette for this truck
+        recette = RubberTransport.objects.filter(truck=truck).aggregate(
+            total_recette=Sum(F('tons_of_rubber') * F('price_per_ton'), output_field=FloatField())
+        )['total_recette'] or 0
+
+        # Format date to 'YYYY-MM-DD' and include recette in the grouped data
         created_date = truck.created_at.strftime('%Y-%m-%d')
         grouped_trucks[created_date].append({
             "matriculation_number": truck.matriculation_number,
-            "created_at": truck.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            "created_at": truck.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            "recette": recette,
         })
 
     # Convert defaultdict to a regular dictionary for rendering
@@ -169,3 +177,50 @@ def list_registered_trucks(request):
         }
     )
 
+def add_rubber_transport(request, truck_id):
+    """
+    Handle the addition of rubber transport details for a specific truck.
+    """
+    # Retrieve the truck object or return a 404 error if not found
+    truck = get_object_or_404(Truck, id=truck_id)
+
+    if request.method == "POST":
+        try:
+            # Retrieve and validate the input data
+            tons_of_rubber = float(request.POST.get("tons_of_rubber", 0.0))
+            price_per_ton = float(request.POST.get("price_per_ton", 0.0))
+
+            if tons_of_rubber <= 0 or price_per_ton <= 0:
+                return JsonResponse(
+                    {"success": False, "error": "Both tons of rubber and price per ton must be greater than zero."},
+                    status=400
+                )
+
+            # Save the rubber transport data
+            rubber_transport = RubberTransport.objects.create(
+                truck=truck,
+                tons_of_rubber=tons_of_rubber,
+                price_per_ton=price_per_ton
+            )
+
+            # Calculate the total recette
+            recette = sum(rt.total_price() for rt in truck.rubber_transports.all())
+
+            # Update the truck's recette (if needed in a separate field, optional)
+            truck.recette = recette  # Assuming you have a `recette` field in the Truck model
+            truck.save()
+
+            # Return the updated recette to the frontend
+            return JsonResponse({"success": True, "recette": recette})
+        except (ValueError, TypeError) as e:
+            # Handle input parsing errors
+            return JsonResponse(
+                {"success": False, "error": f"Invalid input: {str(e)}"},
+                status=400
+            )
+
+    # Handle invalid request methods
+    return JsonResponse(
+        {"success": False, "error": "Only POST requests are allowed for this endpoint."},
+        status=405
+    )

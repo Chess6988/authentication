@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4" style="text-align: center;">Add Rubber Transport</h2>
+
+    <!-- Truck Information -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            Truck Details
+        </div>
+        <div class="card-body">
+            <p><strong>Matriculation Number:</strong> {{ truck.matriculation_number }}</p>
+            <p><strong>Registered At:</strong> {{ truck.created_at }}</p>
+        </div>
+    </div>
+
+    <!-- Add Rubber Transport Form -->
+    <form method="POST" action="">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="tons_of_rubber" class="form-label">Tons of Rubber</label>
+            <input type="number" id="tons_of_rubber" name="tons_of_rubber" class="form-control" step="0.01" required>
+        </div>
+        <div class="mb-3">
+            <label for="price_per_ton" class="form-label">Price Per Ton</label>
+            <input type="number" id="price_per_ton" name="price_per_ton" class="form-control" step="0.01" required>
+        </div>
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'registered_trucks' %}" class="btn btn-secondary">Back</a>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
