@@ -55,14 +55,18 @@
                         </div>
                         <div>
                             <span data-truck-id="{{ truck.id }}"><strong>Recette:</strong> {{ truck.recette|floatformat:2 }} FCFA</span>
-                            <button class="btn btn-sm btn-outline-primary" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#addRubberTransportModal"
-                                    data-truck-id="{{ truck.id }}" 
-                                    data-matriculation="{{ truck.matriculation_number }}"
-                                    data-registered-at="{{ truck.created_at }}">
-                                Add Rubber Transport
-                            </button>
+                            {% if truck.id %}
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#addRubberTransportModal"
+                                        data-truck-id="{{ truck.id }}" 
+                                        data-matriculation="{{ truck.matriculation_number }}"
+                                        data-registered-at="{{ truck.created_at }}">
+                                    Add Rubber Transport
+                                </button>
+                            {% else %}
+                                <span class="text-danger">Invalid Truck ID</span>
+                            {% endif %}
                         </div>
                     </li>
                 {% endfor %}
@@ -74,7 +78,6 @@
         No trucks have been registered yet for the selected date range.
     </div>
 {% endif %}
-
 
 
 
@@ -115,6 +118,7 @@
                         <button type="submit" class="btn btn-primary">Save</button>
                     </div>
                 </form>
+                
             </div>
         </div>
     </div>
@@ -127,9 +131,9 @@
 
 <script>
   // Ensure the modal is populated with the correct truck data
-  const addRubberTransportModal = document.getElementById('addRubberTransportModal');
+ // Ensure the modal is populated with the correct truck data
+const addRubberTransportModal = document.getElementById('addRubberTransportModal');
 
-// Populate the modal dynamically
 addRubberTransportModal.addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;
 
@@ -175,14 +179,17 @@ document.getElementById('addRubberTransportForm').addEventListener('submit', fun
         if (data.success) {
             // Successfully saved, update the recette in the UI
             const truckId = formData.get('truck_id');
-            const recetteElement = document.querySelector(`[data-truck-id="${truckId}"]`).parentElement.querySelector('span');
-            recetteElement.innerHTML = `<strong>Recette:</strong> ${data.recette.toFixed(2)} FCFA`;
+            const recetteElement = document.querySelector(`[data-truck-id="${truckId}"]`);
+            
+            if (recetteElement) {
+                recetteElement.innerHTML = `<strong>Recette:</strong> ${data.recette.toFixed(2)} FCFA`;
+            }
 
             // Close the modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('addRubberTransportModal'));
             modal.hide();
 
-            // Optional: Show a success notification
+            // Show a success notification (optional)
             alert('Rubber transport details added successfully!');
         } else {
             // Handle errors returned by the server
@@ -194,6 +201,7 @@ document.getElementById('addRubberTransportForm').addEventListener('submit', fun
         alert('An unexpected error occurred. Please try again.');
     });
 });
+
    </script>
 
     

@@ -1,6 +1,7 @@
 import re
 from django.core.exceptions import ValidationError
 from django.db import models
+from decimal import Decimal
 
 class Truck(models.Model):
     matriculation_number = models.CharField(max_length=15, unique=True)
@@ -14,7 +15,7 @@ class Truck(models.Model):
 class RubberTransport(models.Model):
     truck = models.ForeignKey(Truck, on_delete=models.CASCADE, related_name="rubber_transports")
     number_of_trucks = models.PositiveIntegerField(default=1)  # Ensures non-negative integers
-    tons_of_rubber = models.FloatField(default=0.0)
+    tons_of_rubber = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
     price_per_ton = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateField(auto_now_add=True)
 
