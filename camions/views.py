@@ -7,7 +7,8 @@ from .models import RubberTransport, Truck
 from .forms import TruckForm, RubberTransportForm
 from django.core.exceptions import ValidationError
 from django.forms import formset_factory 
-from django.db.models import Sum ,F, FloatField
+from django.db.models import Sum ,F, FloatField, Prefetch
+from decimal import Decimal
 
 # Added recently
 from django.utils.timezone import now
@@ -117,6 +118,11 @@ def truck_information(request):
 
     return render(request, 'camions/truck_information.html', {'forms': formset})
 
+
+
+
+# Listing list of trucks with their matricules
+
 def list_registered_trucks(request):
     # Date range filter from the request
     start_date = request.GET.get('start_date')
@@ -129,6 +135,14 @@ def list_registered_trucks(request):
     # Fetch trucks from the database that match the matriculation numbers
     matriculation_numbers = [truck['matriculation_number'] for truck in recently_registered]
     trucks = Truck.objects.filter(matriculation_number__in=matriculation_numbers)
+
+    # Prefetch related rubber transports for efficiency
+    trucks = trucks.prefetch_related(
+        Prefetch(
+            'rubber_transports', 
+            queryset=RubberTransport.objects.all()
+        )
+    )
 
     # Apply date range filter if provided
     if start_date and end_date:
@@ -145,9 +159,9 @@ def list_registered_trucks(request):
             continue  # Skip trucks with missing IDs
 
         # Calculate the total recette for this truck
-        recette = RubberTransport.objects.filter(truck=truck).aggregate(
-            total_recette=Sum(F('tons_of_rubber') * F('price_per_ton'), output_field=FloatField())
-        )['total_recette'] or 0
+        recette = sum(
+            Decimal(rt.tons_of_rubber) * rt.price_per_ton for rt in truck.rubber_transports.all()
+        )
 
         # Format date to 'YYYY-MM-DD' and include recette in the grouped data
         created_date = truck.created_at.strftime('%Y-%m-%d')
@@ -156,6 +170,7 @@ def list_registered_trucks(request):
             "matriculation_number": truck.matriculation_number,
             "created_at": truck.created_at.strftime('%Y-%m-%d %H:%M:%S'),
             "recette": recette,
+            "rubber_transport_id": truck.rubber_transports.first().id if truck.rubber_transports.exists() else None,
         })
 
     # Debug grouped trucks
@@ -173,51 +188,92 @@ def list_registered_trucks(request):
             'end_date': end_date,
         }
     )
-    
 
+
+# Concerned with inputting inputs for tons of rubber and price per ton
 def add_rubber_transport(request, truck_id):
-    """
-    Handle the addition of rubber transport details for a specific truck.
-    """
     truck = get_object_or_404(Truck, id=truck_id)
+
+    if request.method == "GET":
+        # Fetch existing rubber transport data
+        rubber_transport = RubberTransport.objects.filter(truck=truck).first()
+        
+        # Calculate the recette dynamically
+        recette = RubberTransport.objects.filter(truck=truck).aggregate(
+            total_recette=Sum(F("tons_of_rubber") * F("price_per_ton"), output_field=FloatField())
+        )["total_recette"] or 0
+
+        return JsonResponse({
+            "success": True,
+            "tons_of_rubber": rubber_transport.tons_of_rubber if rubber_transport else "",
+            "price_per_ton": rubber_transport.price_per_ton if rubber_transport else "",
+            "recette": float(recette),  # Dynamically calculate recette
+            "rubber_transport_id": rubber_transport.id if rubber_transport else None,
+        })
 
     if request.method == "POST":
         try:
-            # Retrieve and validate the input data
+            # Get input values from the form
+            tons_of_rubber = float(request.POST.get("tons_of_rubber", 0))
+            price_per_ton = float(request.POST.get("price_per_ton", 0))
+
+            # Validate inputs
+            if tons_of_rubber <= 0 or price_per_ton <= 0:
+                return JsonResponse({"success": False, "error": "Values must be greater than zero."}, status=400)
+
+            # Create or update the rubber transport record
+            rubber_transport, created = RubberTransport.objects.update_or_create(
+                truck=truck,
+                defaults={"tons_of_rubber": tons_of_rubber, "price_per_ton": price_per_ton}
+            )
+
+            # Dynamically calculate the total recette
+            recette = RubberTransport.objects.filter(truck=truck).aggregate(
+                total_recette=Sum(F("tons_of_rubber") * F("price_per_ton"), output_field=FloatField())
+            )["total_recette"] or 0
+
+            return JsonResponse({
+                "success": True,
+                "recette": float(recette),  # Send the updated recette value
+                "rubber_transport_id": rubber_transport.id,
+            })
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    return JsonResponse({"success": False, "error": "Invalid request method."}, status=405)
+
+
+
+
+    
+# Editing existing ton of rubber and price per ton
+def edit_rubber_transport(request):
+    if request.method == "POST":
+        rubber_transport_id = request.POST.get("rubber_transport_id")
+        rubber_transport = get_object_or_404(RubberTransport, id=rubber_transport_id)
+
+        try:
             tons_of_rubber = float(request.POST.get("tons_of_rubber", 0.0))
             price_per_ton = float(request.POST.get("price_per_ton", 0.0))
 
             if tons_of_rubber <= 0 or price_per_ton <= 0:
-                return JsonResponse(
-                    {"success": False, "error": "Both tons of rubber and price per ton must be greater than zero."},
-                    status=400
-                )
+                return JsonResponse({"success": False, "error": "Values must be greater than zero."})
 
-            # Save the rubber transport data
-            RubberTransport.objects.create(
-                truck=truck,
-                tons_of_rubber=tons_of_rubber,
-                price_per_ton=price_per_ton
-            )
+            # Update rubber transport details
+            rubber_transport.tons_of_rubber = tons_of_rubber
+            rubber_transport.price_per_ton = price_per_ton
+            rubber_transport.save()
 
-            # Calculate the total recette
+            # Recalculate recette for the truck
+            truck = rubber_transport.truck
             recette = RubberTransport.objects.filter(truck=truck).aggregate(
                 total_recette=Sum(F('tons_of_rubber') * F('price_per_ton'), output_field=FloatField())
             )['total_recette'] or 0
-
-            # Update the truck's recette field
             truck.recette = recette
             truck.save()
 
-            # Return the updated recette to the frontend
             return JsonResponse({"success": True, "recette": recette})
-        except (ValueError, TypeError) as e:
-            return JsonResponse(
-                {"success": False, "error": f"Invalid input: {str(e)}"},
-                status=400
-            )
+        except (ValueError, TypeError):
+            return JsonResponse({"success": False, "error": "Invalid input."})
 
-    return JsonResponse(
-        {"success": False, "error": "Only POST requests are allowed for this endpoint."},
-        status=405
-    )
+    return JsonResponse({"success": False, "error": "Invalid request."})

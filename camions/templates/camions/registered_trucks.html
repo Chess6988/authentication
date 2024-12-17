@@ -8,7 +8,13 @@
 </head>
 <body>
     <div class="container mt-4">
-        <h2 class="mb-4" style="text-align: center;">Registered Trucks</h2>
+        <h2 class="mb-4" style="text-align: center; font-size: 3em;">Registered Trucks</h2>
+
+
+          <!-- Bootstrap Alert Message -->
+          <div class="alert alert-danger text-center" role="alert">
+            <strong>Attention!!!</strong> Quand vous avez déjà évalué votre recette avec le bouton "Add Rubber Transport" une fois, veuillez ne pas modifier avec le même bouton. Utilisez le bouton "Edit" pour modifier en cas d'erreur. Merci pour votre compréhension.
+        </div>
     
         <!-- Date Range Filter Form -->
         <form method="GET" class="mb-4">
@@ -54,18 +60,27 @@
                             <strong>Registered At:</strong> {{ truck.created_at }}
                         </div>
                         <div>
-                            <span data-truck-id="{{ truck.id }}"><strong>Recette:</strong> {{ truck.recette|floatformat:2 }} FCFA</span>
-                            {% if truck.id %}
-                                <button class="btn btn-sm btn-outline-primary" 
-                                        data-bs-toggle="modal" 
+                            <span data-truck-id="{{ truck.id }}" id="recette-{{ truck.id }}">
+                                <strong>Recette:</strong> {{ truck.recette|default:0|floatformat:2 }} FCFA
+                            </span>
+                            
+                            {% if truck.rubber_transport_id %}
+                                <!-- Edit Button -->
+                                <button id="button-{{ truck.id }}" class="btn btn-sm btn-outline-warning"
+                                        data-bs-toggle="modal"
                                         data-bs-target="#addRubberTransportModal"
-                                        data-truck-id="{{ truck.id }}" 
-                                        data-matriculation="{{ truck.matriculation_number }}"
-                                        data-registered-at="{{ truck.created_at }}">
-                                    Add Rubber Transport
+                                        data-truck-id="{{ truck.id }}"
+                                        data-rubber-transport-id="{{ truck.rubber_transport_id }}">
+                                    Edit Rubber Transport
                                 </button>
                             {% else %}
-                                <span class="text-danger">Invalid Truck ID</span>
+                                <!-- Add Button -->
+                                <button id="button-{{ truck.id }}" class="btn btn-sm btn-outline-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#addRubberTransportModal"
+                                        data-truck-id="{{ truck.id }}">
+                                    Add Rubber Transport
+                                </button>
                             {% endif %}
                         </div>
                     </li>
@@ -101,10 +116,11 @@
                     </div>
                 </div>
 
-                <!-- Add Rubber Transport Form -->
+                <!-- Add/Edit Rubber Transport Form -->
                 <form method="POST" action="" id="addRubberTransportForm">
                     {% csrf_token %}
                     <input type="hidden" id="truckId" name="truck_id">
+                    <input type="hidden" id="rubberTransportId" name="rubber_transport_id"> <!-- For Edit -->
                     <div class="mb-3">
                         <label for="tons_of_rubber" class="form-label">Tons of Rubber</label>
                         <input type="number" id="tons_of_rubber" name="tons_of_rubber" class="form-control" step="0.01" required>
@@ -116,13 +132,15 @@
                     <div class="d-flex justify-content-between">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-warning" id="editButton" style="display: none;">Edit</button>
                     </div>
                 </form>
-                
             </div>
         </div>
     </div>
 </div>
+
+
 </div>
 
 
@@ -130,79 +148,72 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-  // Ensure the modal is populated with the correct truck data
- // Ensure the modal is populated with the correct truck data
-const addRubberTransportModal = document.getElementById('addRubberTransportModal');
-
-addRubberTransportModal.addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-
-    // Extract truck details from data attributes
-    const truckId = button.getAttribute('data-truck-id');
-    const matriculation = button.getAttribute('data-matriculation');
-    const registeredAt = button.getAttribute('data-registered-at');
+    // Get references to the modal and buttons
+    document.addEventListener("DOMContentLoaded", function () {
+    const addRubberTransportModal = document.getElementById("addRubberTransportModal");
 
     // Populate modal fields
-    addRubberTransportModal.querySelector('#truckId').value = truckId;
-    addRubberTransportModal.querySelector('#truckMatriculation').textContent = matriculation;
-    addRubberTransportModal.querySelector('#truckRegisteredAt').textContent = registeredAt;
+    addRubberTransportModal.addEventListener("show.bs.modal", function (event) {
+        const button = event.relatedTarget;
 
-    // Validate truckId
-    if (!truckId) {
-        console.error('Error: Truck ID is missing!');
-        alert('Unable to open the modal. Truck ID is missing.');
-        return;
-    }
+        const truckId = button.getAttribute("data-truck-id");
+        const rubberTransportId = button.getAttribute("data-rubber-transport-id");
 
-    // Set the form action dynamically
-    const form = addRubberTransportModal.querySelector('#addRubberTransportForm');
-    form.action = `/add_rubber_transport/${truckId}/`; // Use the truckId directly in the URL
-});
+        document.getElementById("truckId").value = truckId;
 
-// Handle the form submission using AJAX
-document.getElementById('addRubberTransportForm').addEventListener('submit', function (event) {
-    event.preventDefault(); // Prevent default form submission
-
-    const form = event.target;
-    const formData = new FormData(form);
-
-    // Send AJAX request to the backend
-    fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': formData.get('csrfmiddlewaretoken') // Include CSRF token
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Successfully saved, update the recette in the UI
-            const truckId = formData.get('truck_id');
-            const recetteElement = document.querySelector(`[data-truck-id="${truckId}"]`);
-            
-            if (recetteElement) {
-                recetteElement.innerHTML = `<strong>Recette:</strong> ${data.recette.toFixed(2)} FCFA`;
-            }
-
-            // Close the modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('addRubberTransportModal'));
-            modal.hide();
-
-            // Show a success notification (optional)
-            alert('Rubber transport details added successfully!');
+        if (rubberTransportId) {
+            // Fetch existing data
+            fetch(`/add_rubber_transport/${truckId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("tons_of_rubber").value = data.tons_of_rubber || "";
+                    document.getElementById("price_per_ton").value = data.price_per_ton || "";
+                });
         } else {
-            // Handle errors returned by the server
-            alert(`Error: ${data.error}`);
+            document.getElementById("addRubberTransportForm").reset();
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An unexpected error occurred. Please try again.');
+    });
+
+    // Handle form submission
+    document.getElementById("addRubberTransportForm").addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const form = event.target;
+        const truckId = document.getElementById("truckId").value;
+
+        fetch(`/add_rubber_transport/${truckId}/`, {
+            method: "POST",
+            body: new FormData(form),
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update Recette
+                    document.getElementById(`recette-${truckId}`).innerHTML =
+                        `<strong>Recette:</strong> ${data.recette.toFixed(2)} FCFA`;
+
+                    // Change Button to Edit
+                    const button = document.getElementById(`button-${truckId}`);
+                    button.classList.remove("btn-outline-primary");
+                    button.classList.add("btn-outline-warning");
+                    button.innerText = "Edit Rubber Transport";
+                    button.setAttribute("data-rubber-transport-id", data.rubber_transport_id);
+
+                    // Hide Modal
+                    const modalInstance = bootstrap.Modal.getInstance(addRubberTransportModal);
+                    modalInstance.hide();
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("An unexpected error occurred.");
+            });
     });
 });
-
-   </script>
+  </script>
+  
 
     
 </body>

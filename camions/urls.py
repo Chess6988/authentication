@@ -6,4 +6,6 @@ urlpatterns = [
     path('truck-information/', views.truck_information, name='truck_information'),
     path('registered-trucks/', views.list_registered_trucks, name='list_registered_trucks'),
     path('add_rubber_transport/<int:truck_id>/', views.add_rubber_transport, name='add_rubber_transport'),
+    path('edit_rubber_transport/', views.edit_rubber_transport, name='edit_rubber_transport'),
+
 ]
