@@ -1,5 +1,7 @@
 import re
 from django import forms
+from django.utils.timezone import now
+from django.core.exceptions import ValidationError
 from .models import Truck, RubberTransport
 
 class TruckForm(forms.ModelForm):

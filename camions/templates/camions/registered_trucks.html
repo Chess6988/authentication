@@ -11,10 +11,14 @@
         <h2 class="mb-4" style="text-align: center; font-size: 3em;">Registered Trucks</h2>
 
 
-          <!-- Bootstrap Alert Message -->
+          <!-- Bootstrap Alert Message 
           <div class="alert alert-danger text-center" role="alert">
             <strong>Attention!!!</strong> Quand vous avez déjà évalué votre recette avec le bouton "Add Rubber Transport" une fois, veuillez ne pas modifier avec le même bouton. Utilisez le bouton "Edit" pour modifier en cas d'erreur. Merci pour votre compréhension.
-        </div>
+        </div>-->
+
+
+
+
     
         <!-- Date Range Filter Form -->
         <form method="GET" class="mb-4">
@@ -48,9 +52,13 @@
         {% if grouped_trucks %}
         {% for date, trucks in grouped_trucks.items %}
             <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    Registered on {{ date }}
-                </div>
+              
+<div class="card-header bg-black text-white">
+   
+    <span style="font-size: 2.5rem; font-weight: bold;">Registered on</span>
+    <span style="font-size: 2.5rem; font-weight: bold;">{{ date }}</span>
+   
+</div>
                 <ul class="list-group list-group-flush">
                     {% for truck in trucks %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -142,6 +150,30 @@
     </div>
     
 
+     <!-- Button to verify the recette -->
+     <div class="container mt-4 text-center">
+        <button id="verifyTotalPricesButton" class="btn btn-success">Verify Total Prices</button>
+    </div>
+    
+
+
+
+ <!-- Modal to verify if all recette have values greater than 1 -->
+ <div class="modal fade" id="verifyAlertModal" tabindex="-1" aria-labelledby="verifyAlertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="verifyAlertModalLabel">Recette Verification Failed</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Some transports have recette values ≤ 1. Please assign valid values to all transports.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 
@@ -151,76 +183,105 @@
 <script>
      // Get references to the modal and buttons
      document.addEventListener("DOMContentLoaded", function () {
-        const addRubberTransportModal = document.getElementById("addRubberTransportModal");
+    const addRubberTransportModal = document.getElementById("addRubberTransportModal");
+    const verifyAlertModal = new bootstrap.Modal(document.getElementById("verifyAlertModal"));
+    const verifyTotalPricesButton = document.getElementById("verifyTotalPricesButton");
 
-        // Populate modal fields
-        addRubberTransportModal.addEventListener("show.bs.modal", function (event) {
-            const button = event.relatedTarget;
+    // Modal logic for Add/Edit Rubber Transport
+    addRubberTransportModal.addEventListener("show.bs.modal", function (event) {
+        const button = event.relatedTarget;
 
-            // Extract truck details from data attributes
-            const truckId = button.getAttribute("data-truck-id");
-            const matriculationNumber = button.getAttribute("data-truck-matriculation");
-            const registeredAt = button.getAttribute("data-truck-registered-at");
-            const rubberTransportId = button.getAttribute("data-rubber-transport-id");
+        const truckId = button.getAttribute("data-truck-id");
+        const matriculationNumber = button.getAttribute("data-truck-matriculation");
+        const registeredAt = button.getAttribute("data-truck-registered-at");
+        const rubberTransportId = button.getAttribute("data-rubber-transport-id");
 
-            // Set the modal fields
-            document.getElementById("truckId").value = truckId;
-            document.getElementById("truckMatriculation").textContent = matriculationNumber || "N/A";
-            document.getElementById("truckRegisteredAt").textContent = registeredAt || "N/A";
+        // Populate truck details in the modal
+        document.getElementById("truckId").value = truckId;
+        document.getElementById("truckMatriculation").textContent = matriculationNumber || "N/A";
+        document.getElementById("truckRegisteredAt").textContent = registeredAt || "N/A";
 
-            if (rubberTransportId) {
-                // Fetch existing data for edit mode
-                fetch(`/add_rubber_transport/${truckId}/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById("tons_of_rubber").value = data.tons_of_rubber || "";
-                        document.getElementById("price_per_ton").value = data.price_per_ton || "";
-                    })
-                    .catch(error => console.error("Error fetching rubber transport data:", error));
-            } else {
-                // Reset form for add mode
-                document.getElementById("addRubberTransportForm").reset();
-            }
-        });
+        // Handle Edit Mode
+        if (rubberTransportId) {
+            document.getElementById("rubberTransportId").value = rubberTransportId;
 
-        // Handle form submission
-        document.getElementById("addRubberTransportForm").addEventListener("submit", function (event) {
-            event.preventDefault();
-
-            const form = event.target;
-            const truckId = document.getElementById("truckId").value;
-
-            fetch(`/add_rubber_transport/${truckId}/`, {
-                method: "POST",
-                body: new FormData(form),
-            })
+            // Fetch existing data for the transport
+            fetch(`/add_rubber_transport/${truckId}/`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success) {
-                        // Update Recette dynamically
-                        document.getElementById(`recette-${truckId}`).innerHTML =
-                            `<strong>Recette:</strong> ${data.recette.toFixed(2)} FCFA`;
+                    document.getElementById("tons_of_rubber").value = data.tons_of_rubber || "";
+                    document.getElementById("price_per_ton").value = data.price_per_ton || "";
+                })
+                .catch(error => console.error("Error fetching rubber transport data:", error));
+        } else {
+            // Reset form for Add Mode
+            document.getElementById("addRubberTransportForm").reset();
+            document.getElementById("rubberTransportId").value = ""; // Clear the rubber transport ID
+        }
+    });
 
-                        // Update the button to "Edit" mode
-                        const button = document.getElementById(`button-${truckId}`);
+    // Form submission logic for Add/Edit
+    document.getElementById("addRubberTransportForm").addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const form = event.target;
+        const truckId = document.getElementById("truckId").value;
+        const rubberTransportId = document.getElementById("rubberTransportId").value;
+
+        const endpoint = rubberTransportId
+            ? `/edit_rubber_transport/`  // Edit mode
+            : `/add_rubber_transport/${truckId}/`; // Add mode with truck_id
+
+        fetch(endpoint, {
+            method: "POST",
+            body: new FormData(form),
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update recette dynamically
+                    document.getElementById(`recette-${truckId}`).innerHTML =
+                        `<strong>Recette:</strong> ${data.recette.toFixed(2)} FCFA`;
+
+                    // Update button to Edit mode if in Add mode
+                    const button = document.getElementById(`button-${truckId}`);
+                    if (!rubberTransportId) {
                         button.classList.remove("btn-outline-primary");
                         button.classList.add("btn-outline-warning");
                         button.innerText = "Edit Rubber Transport";
                         button.setAttribute("data-rubber-transport-id", data.rubber_transport_id);
-
-                        // Hide the modal
-                        const modalInstance = bootstrap.Modal.getInstance(addRubberTransportModal);
-                        modalInstance.hide();
-                    } else {
-                        alert(`Error: ${data.error}`);
                     }
-                })
-                .catch(error => {
-                    console.error("Error submitting form:", error);
-                    alert("An unexpected error occurred.");
-                });
-        });
+
+                    // Hide the modal
+                    const modalInstance = bootstrap.Modal.getInstance(addRubberTransportModal);
+                    modalInstance.hide();
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error("Error submitting form:", error);
+                alert("An unexpected error occurred.");
+            });
     });
+
+    // Verify Total Prices Button Logic
+    verifyTotalPricesButton.addEventListener("click", function () {
+        fetch("/verify_total_prices/") // Updated to correct endpoint
+            .then(response => response.json())
+            .then(data => {
+                if (data.all_updated) {
+                    window.location.href = "/welcome/"; // Redirect if all records are valid
+                } else {
+                    verifyAlertModal.show(); // Show alert modal if verification fails
+                }
+            })
+            .catch(error => {
+                console.error("Error verifying total prices:", error);
+                alert("An unexpected error occurred while verifying total prices.");
+            });
+    });
+});
   </script>
   
 

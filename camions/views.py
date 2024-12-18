@@ -7,7 +7,7 @@ from .models import RubberTransport, Truck
 from .forms import TruckForm, RubberTransportForm
 from django.core.exceptions import ValidationError
 from django.forms import formset_factory 
-from django.db.models import Sum ,F, FloatField, Prefetch
+from django.db.models import Sum ,F, FloatField, Prefetch,Q
 from decimal import Decimal
 
 # Added recently
@@ -54,6 +54,10 @@ def register_truck(request):
 
 
 def truck_information(request):
+    """
+    Handles the registration of truck matriculation numbers with the constraint 
+    that a matriculation number must be unique per day but can be reused on different days.
+    """
     number_of_trucks = request.session.get('number_of_trucks', 0)
     print(f"Number of trucks in session: {number_of_trucks}")
 
@@ -76,35 +80,42 @@ def truck_information(request):
                     matriculation_number = form.cleaned_data['matriculation_number']
                     today = now().date()
 
-                    duplicate_truck = Truck.objects.filter(
+                    # Check if the matriculation number is already registered for today
+                    if Truck.objects.filter(
                         matriculation_number=matriculation_number,
                         created_at__date=today
-                    ).exists()
-
-                    if duplicate_truck:
+                    ).exists():
                         form.add_error(
                             'matriculation_number',
-                            f"The matriculation number '{matriculation_number}' has already been registered today."
+                            f"The matriculation number '{matriculation_number}' is already registered today."
                         )
                         duplicate_errors = True
                     else:
                         try:
+                            # Save the truck to the database
                             truck = form.save(commit=False)
+                            truck.created_at = now()  # Explicitly set the creation date
                             truck.save()
+
+                            # Add the truck to the recently registered list
                             recently_registered_trucks.append({
-                                "id": truck.id,  # Add truck ID
+                                "id": truck.id,
                                 "matriculation_number": truck.matriculation_number,
                                 "created_at": truck.created_at.strftime('%Y-%m-%d %H:%M:%S')
                             })
                             print(f"Saved truck: {truck.id} - {truck.matriculation_number}")
-                        except IntegrityError:
-                            form.add_error('matriculation_number', f"Error saving '{matriculation_number}'.")
+                        except IntegrityError as e:
+                            form.add_error(
+                                'matriculation_number',
+                                f"An error occurred while saving '{matriculation_number}': {str(e)}"
+                            )
                             duplicate_errors = True
 
             if duplicate_errors:
-                messages.error(request, "Some matriculation numbers could not be registered.")
+                messages.error(request, "Some matriculation numbers could not be registered due to duplicates or other errors.")
                 return render(request, 'camions/truck_information.html', {'forms': formset})
 
+            # Save successfully registered trucks to the session
             request.session['recently_registered_trucks'] = recently_registered_trucks
             print("Session recently registered trucks:", request.session['recently_registered_trucks'])
             messages.success(request, "Trucks successfully registered.")
@@ -122,48 +133,38 @@ def truck_information(request):
 
 
 # Listing list of trucks with their matricules
-
 def list_registered_trucks(request):
-    # Date range filter from the request
+    # Get the date range from the GET request
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
-    # Retrieve trucks registered in the current session
-    recently_registered = request.session.get('recently_registered_trucks', [])
-    print(f"Recently registered trucks: {recently_registered}")
+    # Initialize the query for trucks
+    trucks = Truck.objects.all()
 
-    # Fetch trucks from the database that match the matriculation numbers
-    matriculation_numbers = [truck['matriculation_number'] for truck in recently_registered]
-    trucks = Truck.objects.filter(matriculation_number__in=matriculation_numbers)
-
-    # Prefetch related rubber transports for efficiency
-    trucks = trucks.prefetch_related(
-        Prefetch(
-            'rubber_transports', 
-            queryset=RubberTransport.objects.all()
-        )
-    )
-
-    # Apply date range filter if provided
+    # Apply date range filter
     if start_date and end_date:
         trucks = trucks.filter(
             created_at__date__gte=start_date,
             created_at__date__lte=end_date
         )
 
-    # Group trucks by their creation date
+    # Prefetch related rubber transports to optimize queries
+    trucks = trucks.prefetch_related(
+        Prefetch(
+            'rubber_transports',
+            queryset=RubberTransport.objects.all()
+        )
+    )
+
+    # Group trucks by the creation date
     grouped_trucks = defaultdict(list)
     for truck in trucks:
-        if not truck.id:
-            print(f"Skipping truck with missing ID: {truck}")
-            continue  # Skip trucks with missing IDs
-
         # Calculate the total recette for this truck
         recette = sum(
             Decimal(rt.tons_of_rubber) * rt.price_per_ton for rt in truck.rubber_transports.all()
         )
 
-        # Format date to 'YYYY-MM-DD' and include recette in the grouped data
+        # Format the truck data
         created_date = truck.created_at.strftime('%Y-%m-%d')
         grouped_trucks[created_date].append({
             "id": truck.id,
@@ -173,7 +174,7 @@ def list_registered_trucks(request):
             "rubber_transport_id": truck.rubber_transports.first().id if truck.rubber_transports.exists() else None,
         })
 
-    # Debug grouped trucks
+    # Debug output
     print("Grouped Trucks:", grouped_trucks)
 
     # Convert defaultdict to a regular dictionary for rendering
@@ -188,6 +189,7 @@ def list_registered_trucks(request):
             'end_date': end_date,
         }
     )
+
 
 
 # Concerned with inputting inputs for tons of rubber and price per ton
@@ -250,9 +252,12 @@ def add_rubber_transport(request, truck_id):
 def edit_rubber_transport(request):
     if request.method == "POST":
         rubber_transport_id = request.POST.get("rubber_transport_id")
-        rubber_transport = get_object_or_404(RubberTransport, id=rubber_transport_id)
+
+        if not rubber_transport_id:
+            return JsonResponse({"success": False, "error": "Rubber transport ID is required for editing. Use 'Add' for new records."})
 
         try:
+            rubber_transport = RubberTransport.objects.get(id=rubber_transport_id)
             tons_of_rubber = float(request.POST.get("tons_of_rubber", 0.0))
             price_per_ton = float(request.POST.get("price_per_ton", 0.0))
 
@@ -273,7 +278,30 @@ def edit_rubber_transport(request):
             truck.save()
 
             return JsonResponse({"success": True, "recette": recette})
+        except RubberTransport.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Rubber transport not found."})
         except (ValueError, TypeError):
             return JsonResponse({"success": False, "error": "Invalid input."})
 
     return JsonResponse({"success": False, "error": "Invalid request."})
+
+
+
+
+
+def verify_total_prices(request):
+    """
+    Verifies that all RubberTransport records have valid tons_of_rubber and price_per_ton.
+    """
+    # Check if there are any invalid records
+    invalid_transports = RubberTransport.objects.filter(
+        Q(tons_of_rubber__lte=0) | Q(price_per_ton__lte=0)
+    )
+
+    if invalid_transports.exists():
+        return JsonResponse({"all_updated": False})  # Found invalid records
+    return JsonResponse({"all_updated": True})  # All records are valid
+
+
+def welcome(request):
+    return render(request, "camions/welcome.html")

@@ -4,8 +4,16 @@ from django.db import models
 from decimal import Decimal
 
 class Truck(models.Model):
-    matriculation_number = models.CharField(max_length=15, unique=True)
+    matriculation_number = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['matriculation_number', 'created_at'],
+                name='unique_daily_matriculation'
+            )
+        ]
 
     def __str__(self):
         return self.matriculation_number
