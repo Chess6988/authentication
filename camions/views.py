@@ -291,15 +291,22 @@ def edit_rubber_transport(request):
 
 def verify_total_prices(request):
     """
-    Verifies that all RubberTransport records have valid tons_of_rubber and price_per_ton.
+    Verifies that all RubberTransport records have a recette >= 5.
     """
-    # Check if there are any invalid records
-    invalid_transports = RubberTransport.objects.filter(
-        Q(tons_of_rubber__lte=0) | Q(price_per_ton__lte=0)
-    )
+    # Check for invalid recette values (< 5)
+    invalid_transports = RubberTransport.objects.annotate(
+        recette=F("tons_of_rubber") * F("price_per_ton")
+    ).filter(recette__lt=5)
 
     if invalid_transports.exists():
-        return JsonResponse({"all_updated": False})  # Found invalid records
+        # Include details of invalid records in the response for debugging or display
+        invalid_data = list(
+            invalid_transports.values("id", "tons_of_rubber", "price_per_ton", "recette")
+        )
+        return JsonResponse(
+            {"all_updated": False, "invalid_transports": invalid_data}
+        )  # Found invalid records
+
     return JsonResponse({"all_updated": True})  # All records are valid
 
 

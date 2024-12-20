@@ -55,8 +55,8 @@
               
 <div class="card-header bg-black text-white">
    
-    <span style="font-size: 2.5rem; font-weight: bold;">Registered on</span>
-    <span style="font-size: 2.5rem; font-weight: bold; margin-left: 780px;">{{ date }}</span>
+    <span style="font-size: 2.5rem; font-weight: bold;">Registered on</span> 
+    <span style="font-size: 2.5rem; font-weight: bold;  margin-left: 770px;">{{ date }}</span>
    
 </div>
                 <ul class="list-group list-group-flush">
@@ -167,7 +167,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Some transports have recette values ≤ 1. Please assign valid values to all transports.</p>
+                <p>Some Matricules have recette values ≤ 1 (e.g recette: 0FCFA/FCFA).</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -187,10 +187,51 @@
     const verifyAlertModal = new bootstrap.Modal(document.getElementById("verifyAlertModal"));
     const verifyTotalPricesButton = document.getElementById("verifyTotalPricesButton");
 
+    // Function to check if any recette is less than 5 in the UI
+    function hasInvalidRecette() {
+        const recetteElements = document.querySelectorAll("[id^='recette-']");
+        for (const element of recetteElements) {
+            const recetteValue = parseFloat(
+                element.textContent.match(/Recette:\s([\d.]+)/)?.[1] || "0"
+            );
+            if (recetteValue < 5) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Verify Total Prices Button Logic
+    verifyTotalPricesButton.addEventListener("click", function () {
+        if (hasInvalidRecette()) {
+            // Show alert modal if any recette < 5
+            verifyAlertModal.show();
+        } else {
+            // Proceed with server-side verification if all recette are valid
+            fetch("/verify_total_prices/")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.all_updated === true) {
+                        // Redirect to welcome page if all records are valid
+                        window.location.href = "/welcome/";
+                    } else {
+                        // Show alert modal if server-side verification fails
+                        verifyAlertModal.show();
+
+                        // Optionally, log invalid transports for debugging
+                        console.error("Invalid transports detected:", data.invalid_transports);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error verifying total prices:", error);
+                    alert("An unexpected error occurred while verifying total prices.");
+                });
+        }
+    });
+
     // Modal logic for Add/Edit Rubber Transport
     addRubberTransportModal.addEventListener("show.bs.modal", function (event) {
         const button = event.relatedTarget;
-
         const truckId = button.getAttribute("data-truck-id");
         const matriculationNumber = button.getAttribute("data-truck-matriculation");
         const registeredAt = button.getAttribute("data-truck-registered-at");
@@ -204,7 +245,6 @@
         // Handle Edit Mode
         if (rubberTransportId) {
             document.getElementById("rubberTransportId").value = rubberTransportId;
-
             // Fetch existing data for the transport
             fetch(`/add_rubber_transport/${truckId}/`)
                 .then(response => response.json())
@@ -223,13 +263,11 @@
     // Form submission logic for Add/Edit
     document.getElementById("addRubberTransportForm").addEventListener("submit", function (event) {
         event.preventDefault();
-
         const form = event.target;
         const truckId = document.getElementById("truckId").value;
         const rubberTransportId = document.getElementById("rubberTransportId").value;
-
         const endpoint = rubberTransportId
-            ? `/edit_rubber_transport/`  // Edit mode
+            ? `/edit_rubber_transport/` // Edit mode
             : `/add_rubber_transport/${truckId}/`; // Add mode with truck_id
 
         fetch(endpoint, {
@@ -242,7 +280,6 @@
                     // Update recette dynamically
                     document.getElementById(`recette-${truckId}`).innerHTML =
                         `<strong>Recette:</strong> ${data.recette.toFixed(2)} FCFA`;
-
                     // Update button to Edit mode if in Add mode
                     const button = document.getElementById(`button-${truckId}`);
                     if (!rubberTransportId) {
@@ -251,7 +288,6 @@
                         button.innerText = "Edit Rubber Transport";
                         button.setAttribute("data-rubber-transport-id", data.rubber_transport_id);
                     }
-
                     // Hide the modal
                     const modalInstance = bootstrap.Modal.getInstance(addRubberTransportModal);
                     modalInstance.hide();
@@ -262,23 +298,6 @@
             .catch(error => {
                 console.error("Error submitting form:", error);
                 alert("An unexpected error occurred.");
-            });
-    });
-
-    // Verify Total Prices Button Logic
-    verifyTotalPricesButton.addEventListener("click", function () {
-        fetch("/verify_total_prices/") // Updated to correct endpoint
-            .then(response => response.json())
-            .then(data => {
-                if (data.all_updated) {
-                    window.location.href = "/welcome/"; // Redirect if all records are valid
-                } else {
-                    verifyAlertModal.show(); // Show alert modal if verification fails
-                }
-            })
-            .catch(error => {
-                console.error("Error verifying total prices:", error);
-                alert("An unexpected error occurred while verifying total prices.");
             });
     });
 });
