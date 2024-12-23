@@ -288,7 +288,7 @@ def edit_rubber_transport(request):
 
 
 
-
+# system verifies if all recette have values before ridirecting to welcome page
 def verify_total_prices(request):
     """
     Verifies that all RubberTransport records have a recette >= 5.

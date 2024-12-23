@@ -1,4 +1,6 @@
+
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Financial Management Dashboard{% endblock %}
 
@@ -273,7 +275,9 @@
         <!-- Quick Actions -->
         <div class="dashboard-metrics">
             <div class="card">
-                <a href="{% url 'register_truck' %}" class="btn btn-primary">Register a New Truck</a>
+                <a href="{% url 'register_truck' %}" class="btn btn-primary">
+                    <i class="bi bi-truck"></i> Register a New Truck
+                </a>
             </div>
         </div>
     </div>
